@@ -3,17 +3,97 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Embed Now.gg — Iframe</title>
+  <title>Now.gg — Wrapper (GitHub Pages)</title>
+  <meta name="robots" content="noindex">
   <style>
-    html,body { height:100%; margin:0; }
-    .frame { width:100%; height:100vh; border:0; }
-    .notice { padding:1rem; background:#fffbe6; border-bottom:1px solid #f0e6b8; }
+    :root { --bg:#0f1720; --card:#0b1220; --accent:#48b; --muted:#aab; color-scheme:dark; }
+    html,body { height:100%; margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:#eef; }
+    .top { display:flex; gap:12px; align-items:center; padding:14px; background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent); box-shadow:0 1px 0 rgba(255,255,255,0.02); }
+    .title { font-weight:600; font-size:16px; }
+    .actions { margin-left:auto; display:flex; gap:8px; }
+    .btn { background:var(--accent); color:#012; border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600; }
+    .link { background:transparent; border:1px solid rgba(255,255,255,0.06); padding:8px 12px; border-radius:8px; color:var(--muted); text-decoration:none; display:inline-flex; gap:8px; align-items:center; }
+    .container { padding:16px; display:flex; flex-direction:column; gap:12px; height:calc(100vh - 66px); }
+    .frameWrap { flex:1; background:var(--card); border-radius:8px; overflow:hidden; display:flex; flex-direction:column; min-height:240px; }
+    iframe { width:100%; height:100%; border:0; background:#000; display:block; }
+    .notice { padding:12px; font-size:13px; color:var(--muted); background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent); border-top:1px dashed rgba(255,255,255,0.02); }
+    .center { display:flex; align-items:center; justify-content:center; height:100%; gap:12px; flex-direction:column; padding:20px; text-align:center; color:var(--muted); }
+    a.small { color:#9cf; font-size:13px; text-decoration:none; }
   </style>
 </head>
 <body>
-  <div class="notice">
-    If the page below is blank or an error appears, the site likely blocks embedding (via X-Frame-Options or CSP).
+  <div class="top">
+    <div class="title">Now.gg — GitHub Pages wrapper (static)</div>
+
+    <div class="actions">
+      <button class="btn" id="openBtn">Open in new tab</button>
+      <button class="btn" id="openPopupBtn" title="Opens a popup window">Open popup</button>
+      <a class="link" id="directLink" href="https://now.gg/games/roblox-mini-games.html" target="_blank" rel="noopener noreferrer">Open original</a>
+    </div>
   </div>
-  <iframe class="frame" src="https://now.gg/games/roblox-mini-games.html" title="Now.gg Roblox Mini Games"></iframe>
+
+  <div class="container">
+    <div class="frameWrap" id="frameWrap">
+      <!-- Attempt to embed via iframe. Most likely blocked by the remote site. -->
+      <iframe id="gameFrame" src="https://now.gg/games/roblox-mini-games.html" title="Now.gg (embedded)"></iframe>
+    </div>
+
+    <div class="notice" id="notice">
+      If the box above is blank or shows an error, the remote site is blocking embedding (via X-Frame-Options or Content-Security-Policy).
+      Use <strong>Open in new tab</strong> or <strong>Open original</strong> to play the game. For local dev testing you can run a local proxy — see README.
+    </div>
+  </div>
+
+  <script>
+    const openBtn = document.getElementById('openBtn');
+    const openPopupBtn = document.getElementById('openPopupBtn');
+    const frameWrap = document.getElementById('frameWrap');
+    const gameFrame = document.getElementById('gameFrame');
+    const notice = document.getElementById('notice');
+
+    openBtn.addEventListener('click', () => {
+      // user gesture -> avoids popup blocker in most browsers
+      window.open('https://now.gg/games/roblox-mini-games.html', '_blank', 'noopener,noreferrer');
+    });
+
+    openPopupBtn.addEventListener('click', () => {
+      // Opens a popup window (address bar still visible)
+      window.open('https://now.gg/games/roblox-mini-games.html', 'nowgg_popup', 'width=1100,height=720,noopener');
+    });
+
+    // Heuristic: detect if iframe loaded content or appears blocked.
+    // NOTE: we cannot access cross-origin frame contents — so we use a best-effort timeout check.
+    // If the iframe remains at about:blank (rare) or throws a loadfail, we display a clearer message.
+    let loaded = false;
+    gameFrame.addEventListener('load', () => {
+      loaded = true;
+      // If the iframe loaded but is blank (some sites load a blank page within frame),
+      // we still show the fallback notice so user can open in a new tab.
+      setTimeout(() => {
+        // Try to detect obvious failures using same-origin checks (will throw if cross-origin)
+        let isProbablyBlocked = false;
+        try {
+          // Accessing location.href will throw for cross-origin; if it doesn't, we can inspect.
+          const href = gameFrame.contentWindow.location.href;
+          if (!href || href === 'about:blank') isProbablyBlocked = true;
+        } catch (e) {
+          // cross-origin: we can't inspect — assume embedding might be blocked if document is blank visually
+          // We'll still show a subtle message but not hide the iframe.
+        }
+        if (isProbablyBlocked) {
+          notice.innerHTML = 'The iframe loaded a blank page — embedding is blocked. Click "Open in new tab" to visit the game directly.';
+        } else {
+          notice.innerHTML = 'If the iframe appears broken or interactive elements do not work, use "Open in new tab".';
+        }
+      }, 400);
+    });
+
+    // If load doesn't fire within 8s, show fallback (network or blocking)
+    setTimeout(() => {
+      if (!loaded) {
+        notice.innerHTML = 'The iframe did not finish loading (likely blocked by the remote site). Use "Open in new tab" to access the game. See README for dev proxy instructions.';
+      }
+    }, 8000);
+  </script>
 </body>
 </html>

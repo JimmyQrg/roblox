@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Open Now.gg — New Tab</title>
+</head>
+<body>
+  <h1>Open Now.gg — New Tab</h1>
+  <p>
+    This button opens the target site in a new browser tab/window (normal behaviour).
+  </p>
+  <button id="openBtn">Open now.gg → Roblox Mini Games</button>
+
+  <script>
+    document.getElementById('openBtn').addEventListener('click', function () {
+      // Opens the site in a new tab or window (browser's behaviour).
+      // Note: popup blockers may block this if not triggered by a user gesture.
+      window.open('https://now.gg/games/roblox-mini-games.html', '_blank', 'noopener,noreferrer');
+    });
+  </script>
+</body>
+</html>
